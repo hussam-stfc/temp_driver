@@ -1,5 +1,5 @@
 {
   "title": "2.04/2.02 Pulsed-CW Configuration",
   "db_path": "config.db",
-  "extra_columns": ["EM4", "EM3", "EM2", "EM1", "TS_CW", "CM_CW"]
+  "extra_columns": ["EM4", "EM3", "EM2", "EM1", "TS_CW_IN", "CM_CW_IN"]
 }

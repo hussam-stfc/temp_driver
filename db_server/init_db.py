@@ -11,8 +11,9 @@ conn.execute("PRAGMA journal_mode=WAL")
 conn.execute("""
     CREATE TABLE IF NOT EXISTS config (
         ID        INTEGER PRIMARY KEY AUTOINCREMENT,
+        DESCRIPTION TEXT DEFAULT '',
         PV_NAME   TEXT    DEFAULT '',
-        row_order INTEGER DEFAULT 0
+        ROW_ORDER INTEGER DEFAULT 0
     )
 """)
 for col in extra:

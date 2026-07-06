@@ -11,13 +11,13 @@ with open("schema.json") as f:
 
 DB_PATH  = _schema["db_path"]
 EXTRA    = _schema["extra_columns"]
-EDITABLE = {"PV_NAME"} | set(EXTRA)
+EDITABLE = {"PV_NAME", "DESCRIPTION"} | set(EXTRA)
 
 def q(col):
     """Double-quote a column name so SQLite accepts any identifier."""
     return f'"{col}"'
 
-SEL_COLS = ", ".join([q("ID"), q("PV_NAME")] + [q(c) for c in EXTRA])
+SEL_COLS = ", ".join([q("ID"), q("DESCRIPTION"), q("PV_NAME")] + [q(c) for c in EXTRA])
 SELECT   = f"SELECT {SEL_COLS} FROM config"
 
 app = FastAPI()

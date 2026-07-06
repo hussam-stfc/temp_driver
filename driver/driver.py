@@ -75,7 +75,7 @@ def main():
     control = ControlPVs(
         pending=epics.PV(f'{P}:PENDING'),
         error=epics.PV(f'{P}:ERROR'),
-        log=epics.PV(f'{P}:LOG')
+        log=epics.PV(f'{P}:Automation_Logs')
     )
 
     state = StatePVs(
