@@ -1,0 +1,5 @@
+{
+  "title": "EPAC Repetition Rate Configuration",
+  "db_path": "config.db",
+  "extra_columns": ["SingleShot", "1Hz", "10Hz"]
+}

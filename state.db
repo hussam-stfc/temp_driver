@@ -1,0 +1,14 @@
+record(bi, "EM-AUTOMATION:PENDING") {
+    field(ZNAM, "ZERO")
+    field(ONAM, "ONE")
+}
+
+record(string, "EM-AUTOMATION:LOG") {
+    field(ZNAM, "ZERO")
+    field(ONAM, "ONE")
+}
+
+record(bi, "EM-AUTOMATION:ERROR") {
+    field(ZNAM, "ZERO")
+    field(ONAM, "ONE")
+}

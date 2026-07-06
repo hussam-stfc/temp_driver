@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Config</title>
+    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.2.5/dist/css/tabulator.min.css">
+    <script src="https://unpkg.com/tabulator-tables@6.2.5/dist/js/tabulator.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+            color: #222;
+        }
+        h1 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; }
+        #add-btn {
+            margin-top: 10px;
+            padding: 5px 14px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+        }
+        #add-btn:hover { background: #f5f5f5; }
+        .del-btn {
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 1rem;
+            padding: 0;
+            transition: color 0.15s;
+        }
+        .del-btn:hover { color: #c00; }
+
+
+    </style>
+</head>
+<body>
+
+<h1 id="page-title">Loading…</h1>
+<div id="table"></div>
+<button id="add-btn">+ Add Row</button>
+
+<script>
+    // ── Set this to your FastAPI server address ──
+    const API = "http://localhost:8000";
+    // ─────────────────────────────────────────────
+
+    fetch(`${API}/schema`)
+        .then(r => r.json())
+        .then(({ title, extra_columns }) => {
+            document.getElementById("page-title").textContent = title;
+            document.title = title;
+            initTable(extra_columns);
+        })
+        .catch(() => {
+            document.getElementById("page-title").textContent = "Could not reach API";
+        });
+
+    function initTable(extraColumns) {
+        const columns = [
+            // Drag handle
+            { formatter: "handle", headerSort: false, width: 30, minWidth: 30 },
+            // Row position — blank header, auto-updates on drag
+            {
+                formatter: "rownum",
+                title: "",
+                width: 44, minWidth: 44, maxWidth: 44,
+                headerSort: false,
+                editable: false,
+                resizable: false,
+                hozAlign: "center",
+            },
+            // Fixed columns
+            { title: "PV_NAME", field: "PV_NAME", editor: "input", headerSort: false },
+            // Dynamic columns from schema
+            ...extraColumns.map(col => ({
+                title: col,
+                field: col,
+                editor: "input",
+                headerSort: false,
+            })),
+            // Delete button
+            {
+                title: "",
+                field: "_del",
+                width: 44, minWidth: 44, maxWidth: 44,
+                headerSort: false,
+                resizable: false,
+                hozAlign: "center",
+                formatter: () => `<button class="del-btn" title="Delete row">🗑</button>`,
+                cellClick: (e, cell) => {
+                    const row = cell.getRow();
+                    const id  = row.getData().ID;
+                    if (!confirm(`Delete row ID ${id}?`)) return;
+                    fetch(`${API}/rows/${id}`, { method: "DELETE" })
+                        .then(r => { if (r.ok) row.delete(); });
+                },
+            },
+        ];
+
+        const table = new Tabulator("#table", {
+            ajaxURL: `${API}/rows`,
+            layout: "fitColumns",
+            movableRows: true,
+            columns,
+        });
+
+        table.on("rowMoved", () => {
+            table.redraw();  // ensures rownum column updates for all rows
+            const ids = table.getRows().map(r => r.getData().ID);
+            fetch(`${API}/rows/reorder`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ids }),
+            }).then(r => { if (!r.ok) console.error("Reorder failed:", r.status); });
+        });
+
+        table.on("cellEdited", cell => {
+            const field = cell.getField();
+            if (!field || field === "_del") return;
+            fetch(`${API}/rows/${cell.getRow().getData().ID}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ field, value: String(cell.getValue()) }),
+            }).then(r => { if (!r.ok) console.error("Cell save failed:", r.status); });
+        });
+
+        document.getElementById("add-btn").addEventListener("click", () => {
+            fetch(`${API}/rows`, { method: "POST" })
+                .then(r => r.json())
+                .then(row => table.addRow(row));
+        });
+    }
+</script>
+
+</body>
+</html>
