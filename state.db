@@ -1,16 +1,18 @@
 record(bi, "EM-AUTOMATION:PENDING") {
     field(ZNAM, "ZERO")
     field(ONAM, "ONE")
+    field(VAL, 0)
 }
 
-record(string, "EM-AUTOMATION:LOG") {
-    field(ZNAM, "ZERO")
-    field(ONAM, "ONE")
+record(waveform, "EM-AUTOMATION:LOG") {
+    field(DESC, "Log messages")
+    field(NELM, 4096)
 }
 
 record(bi, "EM-AUTOMATION:ERROR") {
     field(ZNAM, "ZERO")
     field(ONAM, "ONE")
+    field(VAL, 0)
 }
 
 # --- State PVs ------------------------------------------------------
@@ -33,9 +35,11 @@ record(mbbi, "EM-AUTOMATION:ENERGY_MODE") {
 record(bi, "EM-AUTOMATION:TS_CW") {
     field(ZNAM, "OUT")
     field(ONAM, "IN")
+    field(VAL, 0)
 }
 
-record(stbiring, "EM-AUTOMATION:CM_CW") {
+record(bi, "EM-AUTOMATION:CM_CW") {
     field(ZNAM, "OUT")
     field(ONAM, "IN")
+    field(VAL, 0)
 }

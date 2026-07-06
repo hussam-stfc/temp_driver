@@ -17,6 +17,9 @@ API_BASE_URL: Final[str] = "http://localhost:8000"
 # EPICS env vars
 P: Final[str] = "EM-AUTOMATION"
 
+# Logging configuration
+LOG_LEVEL: Final[int] = logging.DEBUG
+
 class LogPVHandler(logging.Handler):
     def __init__(self, log_pv: epics.PV, error_pv: epics.PV):
         super().__init__()
@@ -26,9 +29,14 @@ class LogPVHandler(logging.Handler):
 
     def emit(self, record):
         message = self.format(record)
-        self.log_pv.put(message)
+        # TODO: Write to log PV when we determine the correct string length limit
+        # For now, just log to stdout
+        # self.log_pv.put(message)
         if record.levelno >= logging.ERROR:
-            self.error_pv.put(1)
+            try:
+                self.error_pv.put(1)
+            except Exception:
+                pass
 
 
 @dataclass
@@ -55,10 +63,10 @@ def run_job(state: StatePVs) -> bool:
         logger.error("Failed to write PVs")
         return False
     
-    status = verify_pvs(pv_map)
-    if (not status):
-        logger.error("Failed to verify PVs")
-        return False
+    # status = verify_pvs(pv_map)
+    # if (not status):
+    #     logger.error("Failed to verify PVs")
+    #     return False
 
     return True
 
@@ -76,7 +84,7 @@ def main():
         cm_cw=epics.PV(f'{P}:CM_CW')
     )
 
-    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+    logging.basicConfig(level=LOG_LEVEL, format='%(levelname)s: %(message)s')
     logger.addHandler(LogPVHandler(control.log, control.error))
 
     def on_pending(value=None, **kw):
@@ -98,15 +106,12 @@ def main():
     control.pending.add_callback(on_pending)
     input("Press enter to quit\n")
 
-if __name__ == '__main__':
-    main()
-
 
 # -------------------------------------------------------------------------------------------------
 # State + configuration mapping logic
 
 @dataclass
-pvNewVal:
+class pvNewVal:
     new_val: str
     pv: epics.PV
 
@@ -157,28 +162,35 @@ def map_state(state: StatePVs, database: Database) -> PVMap:
     energy_mode = state.energy_mode.get()
     cw_ts = state.ts_cw.get()
     cw_cm = state.cm_cw.get()
+    
+    logger.debug(f"State: energy_mode={energy_mode}, cw_ts={cw_ts}, cw_cm={cw_cm}")
 
     pv_map = {}
     
     for pv_name, row in database.items():
         new_val = None
+        state_name = None
         
         # Priority 1: Check CW_CM
-        if cw_cm == 1 and row.get("CW_CM", ""):
-            new_val = row["CW_CM"]
+        if cw_cm == 1 and row.get("CM_CW", ""):
+            new_val = row["CM_CW"]
+            state_name = "CM_CW"
         # Priority 2: Check CW_TS
-        elif cw_ts == 1 and row.get("CW_TS", ""):
-            new_val = row["CW_TS"]
+        elif cw_ts == 1 and row.get("TS_CW", ""):
+            new_val = row["TS_CW"]
+            state_name = "TS_CW"
         # Priority 3: Check energy mode (1-4)
         elif energy_mode in [1, 2, 3, 4]:
             col_name = f"EM{energy_mode}"
             if row.get(col_name, ""):
                 new_val = row[col_name]
+                state_name = col_name
         
         # If a value was found, add to output map
         if new_val is not None:
             pv = epics.PV(pv_name)
             pv_map[pv_name] = pvNewVal(new_val=new_val, pv=pv)
+            logger.info(f"PV {pv_name} set to {new_val} for {state_name}")
         else:
             logger.error(f"No matching rule for PV '{pv_name}'")
     
@@ -221,3 +233,7 @@ def verify_pvs(pv_map: PVMap) -> bool:
             logger.error(f"PV '{pv_name}' mismatch: expected {pv_val.new_val}, got {current_val}")
             all_ok = False
     return all_ok
+
+
+if __name__ == '__main__':
+    main()

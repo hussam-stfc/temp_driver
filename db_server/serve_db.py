@@ -1,6 +1,8 @@
 import sqlite3, json
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 from typing import List
 
@@ -20,6 +22,11 @@ SELECT   = f"SELECT {SEL_COLS} FROM config"
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+# Serve index.html at the root
+@app.get("/")
+def serve_index():
+    return FileResponse(Path(__file__).parent / "index.html")
 
 def db():
     conn = sqlite3.connect(DB_PATH)
