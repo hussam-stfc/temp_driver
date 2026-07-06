@@ -12,3 +12,30 @@ record(bi, "EM-AUTOMATION:ERROR") {
     field(ZNAM, "ZERO")
     field(ONAM, "ONE")
 }
+
+# --- State PVs ------------------------------------------------------
+
+record(mbbi, "EM-AUTOMATION:ENERGY_MODE") {
+    field(DESC, "Current state facility Energy Mode")
+    field(ZRVL, "0")
+    field(ZRST, "OFF")
+    field(ONVL, "1")
+    field(ONST, "EM1")
+    field(TWVL, "2")
+    field(TWST, "EM2")
+    field(THVL, "3")
+    field(THST, "EM3")
+    field(FRVL, "4")
+    field(FRST, "EM4")
+    field(VAL, "4")
+}
+
+record(bi, "EM-AUTOMATION:TS_CW") {
+    field(ZNAM, "OUT")
+    field(ONAM, "IN")
+}
+
+record(stbiring, "EM-AUTOMATION:CM_CW") {
+    field(ZNAM, "OUT")
+    field(ONAM, "IN")
+}
