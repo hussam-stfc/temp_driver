@@ -5,12 +5,12 @@ from typing import Final
 from dataclasses import dataclass
 
 import epics
-from state_mapper import StatePVs, run_mapper
+from energy_mode_mapper import EnergyModeMapper
 
 logger = logging.getLogger(__name__)
 
 # EPICS env vars
-P: Final[str] = "EM-AUTOMATION"
+PREFIX: Final[str] = "EM-AUTOMATION"
 
 # Logging configuration
 LOG_LEVEL: Final[int] = logging.DEBUG
@@ -42,16 +42,12 @@ class ControlPVs:
 def main():
     lock = threading.Lock()
     control = ControlPVs(
-        pending=epics.PV(f'{P}:PENDING'),
-        error=epics.PV(f'{P}:ERROR'),
-        log=epics.PV(f'{P}:Automation_Logs')
+        pending=epics.PV(f'{PREFIX}:PENDING'),
+        error=epics.PV(f'{PREFIX}:ERROR'),
+        log=epics.PV(f'{PREFIX}:Automation_Logs')
     )
 
-    state = StatePVs(
-        energy_mode=epics.PV(f'{P}:ENERGY_MODE'),
-        ts_cw=epics.PV(f'{P}:TS_CW'),
-        cm_cw=epics.PV(f'{P}:CM_CW')
-    )
+    state_mapper = EnergyModeMapper(PREFIX)
 
     logging.basicConfig(level=LOG_LEVEL, format='%(levelname)s: %(message)s')
     logger.addHandler(LogPVHandler(control.log, control.error))
@@ -66,7 +62,7 @@ def main():
             return
         try:
             control.pending.put(0)
-            success = run_mapper(state)
+            success = state_mapper.run()
             if not success:
                 control.error.put(1)
         finally:
